@@ -118,7 +118,7 @@
                 What is VSM & Why Use It for SDLC?
             </h2>
             <p class="text-gray-600 mb-4">
-                Imagine your Software Development Life Cycle (SDLC) as a river. Features and fixes flow through various stages (planning, coding, testing, deployment) until they reach the customer (the sea).
+                Imagine your Software Development Life Cycle (SDLC) as a river. Features and fixes flow through various stages (planning, coding, testing, deployment) until they reach the customer.
             </p>
             <p class="text-gray-600 mb-4">
                 <strong>Value Stream Mapping (VSM)</strong> is like creating a detailed map of that river. It helps you visualize every step, identify where the flow gets stuck (bottlenecks), and spot activities that don't add value (waste).
@@ -164,8 +164,8 @@
                         Build & Test
                     </h3>
                     <p class="text-sm text-yellow-700">Compile, integrate & verify.</p>
-                    <span class="process-time" data-time="3">PT: 3d</span>
-                    <span class="wait-time" data-time="3">Wait: 3d</span>
+                    <span class="process-time" data-time="1">PT: 1d</span>
+                    <span class="wait-time" data-time="0">Wait: 0d</span>
                      <div id="waste-manual-test" class="waste-icon" title="Waste: Excessive manual testing instead of automation.">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                         <span class="tooltip">Manual Test Overload</span>
@@ -206,8 +206,7 @@
                 <div class="flex justify-center space-x-6">
                     <p><strong>Total Lead Time:</strong> <span id="lead-time" class="font-mono">0</span> days</p>
                     <p><strong>Total Process Time:</strong> <span id="process-time" class="font-mono">0</span> days</p>
-                    <p><strong>Flow Efficiency:</strong> <span id="flow-efficiency" class="font-mono">0</span>%</p>
-                </div>
+                    </div>
                  <p id="metrics-message" class="text-sm text-red-600 mt-2 font-semibold hidden"></p>
              </div>
              </section>
@@ -222,7 +221,6 @@
                 <li><strong>Lead Time (LT):</strong> The total time it takes for one piece of work (e.g., a feature) to go through the entire process, from start to finish. Includes both processing and waiting time. (Lower is better).</li>
                 <li><strong>Process Time (PT) / Cycle Time (CT):</strong> The time actually spent working on the item within a specific step. (Lower is often better, but focus is on value).</li>
                 <li><strong>Wait Time:</strong> The time an item spends waiting between steps (e.g., waiting for code review, waiting for testing environment). This is often where significant waste occurs.</li>
-                <li><strong>Flow Efficiency:</strong> The ratio of Process Time to Lead Time (PT / LT). It shows what percentage of the total time is actually spent adding value. (Higher is better).</li>
                 <li><strong>Waste (Muda):</strong> Anything that consumes resources but doesn't add value for the customer. Common SDLC wastes include: delays, handoffs, unnecessary features, defects/rework, task switching, manual processes (that could be automated).</li>
                  <li><strong>Bottleneck:</strong> A stage in the process where work piles up because its capacity is less than the demand or the capacity of upstream stages. It constrains the flow of the entire system.</li>
             </ul>
@@ -250,7 +248,7 @@
                     <strong class="text-green-800">Reduce Lead Time:</strong> Shortens the overall time to deliver value by tackling delays.
                 </div>
                  <div class="bg-green-50 p-3 rounded border border-green-200">
-                    <strong class="text-green-800">Data-Driven Decisions:</strong> Provides metrics (LT, PT, Efficiency) to measure current state and track improvement impact.
+                    <strong class="text-green-800">Data-Driven Decisions:</strong> Provides metrics (LT, PT) to measure current state and track improvement impact.
                 </div>
                  <div class="bg-green-50 p-3 rounded border border-green-200">
                     <strong class="text-green-800">Enhance Collaboration:</strong> Creates a shared understanding and facilitates communication across teams (Dev, QA, Ops).
@@ -288,7 +286,7 @@
         };
         const leadTimeEl = document.getElementById('lead-time');
         const processTimeEl = document.getElementById('process-time');
-        const flowEfficiencyEl = document.getElementById('flow-efficiency');
+        // const flowEfficiencyEl = document.getElementById('flow-efficiency'); // Removed
         const metricsMessageEl = document.getElementById('metrics-message');
         const wasteIconManualTest = document.getElementById('waste-manual-test');
         const sdlcContainer = document.getElementById('sdlc-container');
@@ -303,6 +301,9 @@
 
         // --- Constants ---
         const SIMULATION_SPEED_MULTIPLIER = 350;
+        const WASTE_PT_PENALTY = 4;
+        const BOTTLENECK_WT_PENALTY = 10;
+
 
         // --- SVGs for Buttons ---
         const bottleneckIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1 w-4 h-4"><path d="M5.52 19c.64-2.2 1.84-3 3.22-3h6.52c1.38 0 2.58.8 3.22 3"/><path d="M12 16V7a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v9"/><path d="M18 7a3 3 0 0 0-3-3h-3a3 3 0 0 0-3 3"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
@@ -334,21 +335,19 @@
         function updateInitialDisplayTimes() {
              const waitSpan = stages.buildTest.querySelector('.wait-time');
              const originalWait = originalWaitTimes[stages.buildTest.id] || 0;
-             waitSpan.textContent = `Wait: ${hasBottleneck ? originalWait * 2 : originalWait}d`;
+             waitSpan.textContent = `Wait: ${hasBottleneck ? (originalWait + BOTTLENECK_WT_PENALTY) : originalWait}d`;
              waitSpan.classList.toggle('font-bold', hasBottleneck);
              waitSpan.classList.toggle('text-red-700', hasBottleneck);
 
              const processSpan = stages.buildTest.querySelector('.process-time');
              const originalProcess = originalProcessTimes[stages.buildTest.id] || 0;
-             const wasteTimeMetric = Math.ceil(originalProcess * 0.5);
-             processSpan.textContent = `PT: ${hasWaste ? originalProcess + wasteTimeMetric : originalProcess}d`;
+             processSpan.textContent = `PT: ${hasWaste ? (originalProcess + WASTE_PT_PENALTY) : originalProcess}d`;
              processSpan.classList.toggle('font-bold', hasWaste);
              processSpan.classList.toggle('text-orange-700', hasWaste);
         }
 
 
         // --- Simulation Logic (Metric Calculation) ---
-        // Calculates LT = Sum(All PT) + Sum(All WT)
         function calculateMetrics() {
             let totalLeadTime = 0;
             let totalProcessTime = 0;
@@ -358,36 +357,30 @@
                 let currentPt = originalProcessTimes[stage.id] || 0;
                 let currentWt = originalWaitTimes[stage.id] || 0;
 
-                // Apply waste effect for METRICS (+50% PT)
                 if (hasWaste && stage.id === 'stage-build-test') {
-                    currentPt += Math.ceil(originalProcessTimes[stage.id] * 0.5);
+                    currentPt += WASTE_PT_PENALTY;
                 }
                 totalProcessTime += currentPt;
-                totalLeadTime += currentPt; // Add Process Time of current stage
+                totalLeadTime += currentPt;
 
-                // Apply bottleneck effect for METRICS (Double WT)
                 if (hasBottleneck && stage.id === 'stage-build-test') {
-                    currentWt += originalWaitTimes[stage.id];
+                    currentWt += BOTTLENECK_WT_PENALTY;
                 }
-
-                // *** Reverted: Add Wait Time for ALL stages ***
                 totalLeadTime += currentWt;
-
             });
 
-            const flowEfficiency = totalLeadTime > 0 ? ((totalProcessTime / totalLeadTime) * 100).toFixed(1) : 0;
+            // Removed Flow Efficiency Calculation
 
             leadTimeEl.textContent = totalLeadTime;
             processTimeEl.textContent = totalProcessTime;
-            flowEfficiencyEl.textContent = flowEfficiency;
 
             let message = "";
              if (hasBottleneck && hasWaste) {
-                 message = "Bottleneck & Waste significantly increase Lead Time and decrease Efficiency!";
+                 message = "Bottleneck & Waste significantly increase Lead Time!";
              } else if (hasBottleneck) {
-                 message = "Bottleneck in 'Test' increases Wait Time, impacting Lead Time & Efficiency!";
+                 message = "Bottleneck: Waiting for capacity in the separate Test team significantly increases Wait Time & Lead Time!";
              } else if (hasWaste) {
-                 message = "Waste (Manual Tests) increases Process Time, impacting Lead Time & Efficiency!";
+                 message = "Waste (Manual Tests) increases Process Time & Lead Time!";
              } else {
                  message = "All major inefficiencies removed! Observe the improved metrics.";
              }
@@ -402,7 +395,7 @@
             const delayPerDay = SIMULATION_SPEED_MULTIPLIER;
             const numDays = Math.max(0, Math.floor(days));
             for (let d = 0; d < numDays; d++) {
-                if (!isRunning) return; // Allow interruption
+                if (!isRunning) return;
                 await new Promise(resolve => setTimeout(resolve, delayPerDay));
                 simulationDayCounter++;
                 if (dayCounterEl) {
@@ -438,35 +431,29 @@
                 const stageWidthPercent = 100 / stageElements.length;
                 const targetPosition = (i + 0.5) * stageWidthPercent;
 
-                workItem.style.left = `${targetPosition}%`; // Start moving
+                workItem.style.left = `${targetPosition}%`;
 
-                // Calculate effective times using METRIC penalties
                 let effectiveProcessTime = originalProcessTimes[stage.id] || 0;
                 let effectiveWaitTime = originalWaitTimes[stage.id] || 0;
 
                 if (hasWaste && stage.id === 'stage-build-test') {
-                    effectiveProcessTime += Math.ceil(originalProcessTimes[stage.id] * 0.5);
+                    effectiveProcessTime += WASTE_PT_PENALTY;
                 }
                  if (hasBottleneck && stage.id === 'stage-build-test') {
-                    effectiveWaitTime += originalWaitTimes[stage.id];
+                    effectiveWaitTime += BOTTLENECK_WT_PENALTY;
                  }
 
-                // Wait for CSS move transition
                 await new Promise(resolve => setTimeout(resolve, 1000));
                  if (!isRunning) break;
 
-                // Simulate process delay
                 await simulateDelayWithCounter(effectiveProcessTime);
                  if (!isRunning) break;
 
-                // *** Always simulate wait delay (even for last stage) ***
-                // This ensures the counter includes the final wait time before confetti
                 await simulateDelayWithCounter(effectiveWaitTime);
                  if (!isRunning) break;
 
             } // End of loop
 
-            // *** Confetti fires AFTER all delays (including final wait time) are simulated ***
             if (isRunning && typeof confetti === 'function') {
                  try {
                      const workItemRect = workItem.getBoundingClientRect();
@@ -481,17 +468,16 @@
                  } catch (e) {
                      console.error("Confetti failed:", e);
                  }
-                 await new Promise(resolve => setTimeout(resolve, 500)); // Pause after confetti
+                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
-            // Finish simulation only if it wasn't interrupted
             if (isRunning) {
                 workItem.classList.add('hidden');
                 workItem.style.left = '0%';
                 if (dayCounterEl) dayCounterEl.textContent = '0';
             }
 
-            isRunning = false; // Reset flag regardless
+            isRunning = false;
             [runButton, bottleneckButton, wasteButton].forEach(btn => {
                 btn.disabled = false;
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -515,7 +501,7 @@
 
              const waitSpan = stages.buildTest.querySelector('.wait-time');
              const originalWait = originalWaitTimes[stages.buildTest.id] || 0;
-             waitSpan.textContent = `Wait: ${hasBottleneck ? originalWait * 2 : originalWait}d`;
+             waitSpan.textContent = `Wait: ${hasBottleneck ? (originalWait + BOTTLENECK_WT_PENALTY) : originalWait}d`;
              waitSpan.classList.toggle('font-bold', hasBottleneck);
              waitSpan.classList.toggle('text-red-700', hasBottleneck);
 
@@ -539,8 +525,7 @@
 
              const processSpan = stages.buildTest.querySelector('.process-time');
              const originalProcess = originalProcessTimes[stages.buildTest.id] || 0;
-             const wasteTimeMetric = Math.ceil(originalProcess * 0.5);
-             processSpan.textContent = `PT: ${hasWaste ? originalProcess + wasteTimeMetric : originalProcess}d`;
+             processSpan.textContent = `PT: ${hasWaste ? (originalProcess + WASTE_PT_PENALTY) : originalProcess}d`;
              processSpan.classList.toggle('font-bold', hasWaste);
              processSpan.classList.toggle('text-orange-700', hasWaste);
 
