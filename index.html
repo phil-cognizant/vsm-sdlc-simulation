@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive VSM for SDLC Explainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+      .sdlc-stage {
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        min-height: 100px;
+        position: relative;
+      }
+      .work-item {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background-color: #3b82f6; /* blue-500 */
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: left 1s ease-in-out;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .wait-time {
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.75rem;
+        color: #ef4444; /* red-500 */
+        white-space: nowrap;
+      }
+      .process-time {
+         position: absolute;
+         top: 5px;
+         left: 5px;
+         font-size: 0.75rem;
+         color: #10b981; /* emerald-500 */
+      }
+       .bottleneck {
+        background-color: #fca5a5 !important; /* red-300 */
+        border: 2px dashed #ef4444; /* red-500 */
+      }
+       .waste-icon {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        color: #f97316; /* orange-500 */
+        cursor: help;
+        z-index: 20;
+      }
+      .tooltip {
+        visibility: hidden;
+        width: 120px;
+        background-color: #374151; /* gray-700 */
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 30;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.75rem;
+      }
+      .waste-icon:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      .icon {
+        display: inline-block;
+        vertical-align: middle;
+        width: 1.25em;
+        height: 1.25em;
+        stroke-width: 2;
+        stroke: currentColor;
+        fill: none;
+      }
+      canvas {
+          z-index: 1000;
+          position: fixed;
+          pointer-events: none;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+      }
+      #day-counter {
+          color: white;
+          font-size: 10px;
+          font-weight: bold;
+          line-height: 1;
+      }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8 font-sans">
+    <div class="max-w-6xl mx-auto bg-white p-6 md:p-10 rounded-lg shadow-md">
+
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Understanding Value Stream Mapping (VSM) for SDLC</h1>
+
+        <section id="intro" class="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
+             <h2 class="text-2xl font-semibold text-gray-700 mb-3 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                What is VSM & Why Use It for SDLC?
+            </h2>
+            <p class="text-gray-600 mb-4">
+                Imagine your Software Development Life Cycle (SDLC) as a river. Features and fixes flow through various stages (planning, coding, testing, deployment) until they reach the customer (the sea).
+            </p>
+            <p class="text-gray-600 mb-4">
+                <strong>Value Stream Mapping (VSM)</strong> is like creating a detailed map of that river. It helps you visualize every step, identify where the flow gets stuck (bottlenecks), and spot activities that don't add value (waste).
+            </p>
+            <p class="text-gray-600">
+                By applying VSM to your SDLC, you can pinpoint inefficiencies, reduce delays, improve quality, and ultimately deliver value to your users faster and more reliably.
+            </p>
+        </section>
+
+         <section id="simulation" class="mb-8 p-4 border border-gray-200 rounded-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 flex items-center">
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-2"><path d="M12.5 4H11a2 2 0 0 0-2 2v2h1.5a2.5 2.5 0 0 1 0 5H9v2a2 2 0 0 0 2 2h1.5a2.5 2.5 0 0 1 2.5 2.5V20M18 4h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><path d="M6 4H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h1"/></svg>
+               Interactive SDLC Flow
+            </h2>
+            <p class="text-gray-600 mb-6">
+                Below is a simplified SDLC process starting with common issues (bottleneck, waste). Click "Run Simulation" to see the impact (watch the day counter on the blue circle!). Then, try removing the issues using the buttons below.
+            </p>
+
+            <div class="flex flex-col md:flex-row justify-between items-stretch space-y-4 md:space-y-0 md:space-x-2 mb-6 bg-gray-50 p-4 rounded-md shadow-inner relative" id="sdlc-container">
+                 <div id="stage-plan" class="sdlc-stage flex-1 bg-blue-100 p-3 rounded-md text-center border border-blue-200">
+                    <h3 class="font-semibold text-blue-800 mb-2 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+                        Plan
+                    </h3>
+                    <p class="text-sm text-blue-700">Define features & requirements.</p>
+                    <span class="process-time" data-time="2">PT: 2d</span>
+                    <span class="wait-time" data-time="1">Wait: 1d</span>
+                </div>
+                 <div class="hidden md:flex items-center text-gray-400 text-2xl">&#8594;</div>
+                 <div id="stage-code" class="sdlc-stage flex-1 bg-purple-100 p-3 rounded-md text-center border border-purple-200">
+                    <h3 class="font-semibold text-purple-800 mb-2 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                        Code
+                    </h3>
+                    <p class="text-sm text-purple-700">Develop the features.</p>
+                    <span class="process-time" data-time="5">PT: 5d</span>
+                    <span class="wait-time" data-time="2">Wait: 2d</span>
+                </div>
+                 <div class="hidden md:flex items-center text-gray-400 text-2xl">&#8594;</div>
+                 <div id="stage-build-test" class="sdlc-stage flex-1 bg-yellow-100 p-3 rounded-md text-center border border-yellow-200 bottleneck">
+                    <h3 class="font-semibold text-yellow-800 mb-2 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1"><path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5h0c-1.4 0-2.5-1.1-2.5-2.5V2"/><path d="M8.5 2h7"/><path d="M14.5 16h-5"/></svg>
+                        Build & Test
+                    </h3>
+                    <p class="text-sm text-yellow-700">Compile, integrate & verify.</p>
+                    <span class="process-time" data-time="3">PT: 3d</span>
+                    <span class="wait-time" data-time="3">Wait: 3d</span>
+                     <div id="waste-manual-test" class="waste-icon" title="Waste: Excessive manual testing instead of automation.">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        <span class="tooltip">Manual Test Overload</span>
+                    </div>
+                </div>
+                 <div class="hidden md:flex items-center text-gray-400 text-2xl">&#8594;</div>
+                 <div id="stage-deploy" class="sdlc-stage flex-1 bg-green-100 p-3 rounded-md text-center border border-green-200">
+                    <h3 class="font-semibold text-green-800 mb-2 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+                        Deploy
+                    </h3>
+                    <p class="text-sm text-green-700">Release to production.</p>
+                    <span class="process-time" data-time="1">PT: 1d</span>
+                    <span class="wait-time" data-time="1">Wait: 1d</span>
+                </div>
+                 <div id="work-item" class="work-item hidden">
+                    <span id="day-counter">0</span>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3 mb-6">
+                 <button id="run-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1 w-4 h-4 fill-white stroke-none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Run Simulation
+                </button>
+                <button id="bottleneck-button" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1 w-4 h-4"><path d="M5.52 19c.64-2.2 1.84-3 3.22-3h6.52c1.38 0 2.58.8 3.22 3"/><path d="M12 16V7a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v9"/><path d="M18 7a3 3 0 0 0-3-3h-3a3 3 0 0 0-3 3"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    Remove Bottleneck (Test)
+                </button>
+                 <button id="waste-button" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1 w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    Remove Waste (Test)
+                </button>
+                </div>
+
+             <div id="metrics" class="text-center bg-indigo-50 p-4 rounded-md border border-indigo-200">
+                <h3 class="text-lg font-semibold text-indigo-800 mb-2">VSM Metrics</h3>
+                <div class="flex justify-center space-x-6">
+                    <p><strong>Total Lead Time:</strong> <span id="lead-time" class="font-mono">0</span> days</p>
+                    <p><strong>Total Process Time:</strong> <span id="process-time" class="font-mono">0</span> days</p>
+                    <p><strong>Flow Efficiency:</strong> <span id="flow-efficiency" class="font-mono">0</span>%</p>
+                </div>
+                 <p id="metrics-message" class="text-sm text-red-600 mt-2 font-semibold hidden"></p>
+             </div>
+             </section>
+
+        <section id="concepts" class="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
+             <h2 class="text-2xl font-semibold text-gray-700 mb-3 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-2"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+                Key VSM Concepts
+            </h2>
+            <ul class="list-disc list-inside text-gray-600 space-y-2">
+                <li><strong>Value Stream:</strong> All the steps (both value-added and non-value-added) required to take a product or service from concept to the customer. In SDLC, this is often from idea/request to deployment/operation.</li>
+                <li><strong>Lead Time (LT):</strong> The total time it takes for one piece of work (e.g., a feature) to go through the entire process, from start to finish. Includes both processing and waiting time. (Lower is better).</li>
+                <li><strong>Process Time (PT) / Cycle Time (CT):</strong> The time actually spent working on the item within a specific step. (Lower is often better, but focus is on value).</li>
+                <li><strong>Wait Time:</strong> The time an item spends waiting between steps (e.g., waiting for code review, waiting for testing environment). This is often where significant waste occurs.</li>
+                <li><strong>Flow Efficiency:</strong> The ratio of Process Time to Lead Time (PT / LT). It shows what percentage of the total time is actually spent adding value. (Higher is better).</li>
+                <li><strong>Waste (Muda):</strong> Anything that consumes resources but doesn't add value for the customer. Common SDLC wastes include: delays, handoffs, unnecessary features, defects/rework, task switching, manual processes (that could be automated).</li>
+                 <li><strong>Bottleneck:</strong> A stage in the process where work piles up because its capacity is less than the demand or the capacity of upstream stages. It constrains the flow of the entire system.</li>
+            </ul>
+        </section>
+
+        <section id="benefits" class="p-4 border border-gray-200 rounded-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-3 flex items-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Benefits of VSM for SDLC
+            </h2>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
+                <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Visualize the Process:</strong> Makes the entire SDLC flow visible and understandable to everyone involved.
+                </div>
+                 <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Identify Bottlenecks:</strong> Clearly shows where work gets stuck, slowing down delivery. (Like our "Test" stage bottleneck example).
+                </div>
+                 <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Expose Waste:</strong> Highlights non-value-adding activities like excessive waiting, rework, or unnecessary process steps. (Like the manual testing waste).
+                </div>
+                 <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Improve Flow:</strong> Focuses efforts on removing constraints and smoothing the path from idea to production.
+                </div>
+                 <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Reduce Lead Time:</strong> Shortens the overall time to deliver value by tackling delays.
+                </div>
+                 <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Data-Driven Decisions:</strong> Provides metrics (LT, PT, Efficiency) to measure current state and track improvement impact.
+                </div>
+                 <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Enhance Collaboration:</strong> Creates a shared understanding and facilitates communication across teams (Dev, QA, Ops).
+                </div>
+                 <div class="bg-green-50 p-3 rounded border border-green-200">
+                    <strong class="text-green-800">Focus on Value:</strong> Helps prioritize improvements that directly impact value delivery to the customer.
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="mt-8 pt-6 border-t border-gray-300 text-center">
+             <h2 class="text-2xl font-semibold text-gray-700 mb-3">Start Mapping Your Value Stream!</h2>
+             <p class="text-gray-600 mb-4">
+                Value Stream Mapping is a powerful tool for any team looking to optimize their SDLC. By visualizing your process and focusing on flow, you can unlock significant improvements in speed, quality, and efficiency.
+             </p>
+             <p class="text-gray-600">
+                Consider mapping your own process – start simple and iterate!
+             </p>
+        </section>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const runButton = document.getElementById('run-button');
+        const bottleneckButton = document.getElementById('bottleneck-button');
+        const wasteButton = document.getElementById('waste-button');
+        const workItem = document.getElementById('work-item');
+        const dayCounterEl = document.getElementById('day-counter');
+        const stages = {
+            plan: document.getElementById('stage-plan'),
+            code: document.getElementById('stage-code'),
+            buildTest: document.getElementById('stage-build-test'),
+            deploy: document.getElementById('stage-deploy')
+        };
+        const leadTimeEl = document.getElementById('lead-time');
+        const processTimeEl = document.getElementById('process-time');
+        const flowEfficiencyEl = document.getElementById('flow-efficiency');
+        const metricsMessageEl = document.getElementById('metrics-message');
+        const wasteIconManualTest = document.getElementById('waste-manual-test');
+        const sdlcContainer = document.getElementById('sdlc-container');
+
+        // --- State ---
+        let isRunning = false;
+        let hasBottleneck = true;
+        let hasWaste = true;
+        let originalProcessTimes = {};
+        let originalWaitTimes = {};
+        let simulationDayCounter = 0;
+
+        // --- Constants ---
+        const SIMULATION_SPEED_MULTIPLIER = 350;
+
+        // --- SVGs for Buttons ---
+        const bottleneckIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1 w-4 h-4"><path d="M5.52 19c.64-2.2 1.84-3 3.22-3h6.52c1.38 0 2.58.8 3.22 3"/><path d="M12 16V7a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v9"/><path d="M18 7a3 3 0 0 0-3-3h-3a3 3 0 0 0-3 3"/><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+        const wasteIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon mr-1 w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
+
+
+        // --- Initial Setup ---
+        function storeOriginalTimes() {
+            originalProcessTimes = {};
+            originalWaitTimes = {};
+            Object.values(stages).forEach(stage => {
+                const ptSpan = stage.querySelector('.process-time');
+                const wtSpan = stage.querySelector('.wait-time');
+                if (ptSpan && ptSpan.dataset.time) {
+                    originalProcessTimes[stage.id] = parseInt(ptSpan.dataset.time);
+                } else {
+                     console.error(`Process time data-time attribute missing or invalid for stage: ${stage.id}`);
+                     originalProcessTimes[stage.id] = 0;
+                }
+                if (wtSpan && wtSpan.dataset.time) {
+                    originalWaitTimes[stage.id] = parseInt(wtSpan.dataset.time);
+                } else {
+                    console.error(`Wait time data-time attribute missing or invalid for stage: ${stage.id}`);
+                    originalWaitTimes[stage.id] = 0;
+                }
+            });
+        }
+
+        function updateInitialDisplayTimes() {
+             const waitSpan = stages.buildTest.querySelector('.wait-time');
+             const originalWait = originalWaitTimes[stages.buildTest.id] || 0;
+             waitSpan.textContent = `Wait: ${hasBottleneck ? originalWait * 2 : originalWait}d`;
+             waitSpan.classList.toggle('font-bold', hasBottleneck);
+             waitSpan.classList.toggle('text-red-700', hasBottleneck);
+
+             const processSpan = stages.buildTest.querySelector('.process-time');
+             const originalProcess = originalProcessTimes[stages.buildTest.id] || 0;
+             const wasteTimeMetric = Math.ceil(originalProcess * 0.5);
+             processSpan.textContent = `PT: ${hasWaste ? originalProcess + wasteTimeMetric : originalProcess}d`;
+             processSpan.classList.toggle('font-bold', hasWaste);
+             processSpan.classList.toggle('text-orange-700', hasWaste);
+        }
+
+
+        // --- Simulation Logic (Metric Calculation) ---
+        // Calculates LT = Sum(All PT) + Sum(All WT)
+        function calculateMetrics() {
+            let totalLeadTime = 0;
+            let totalProcessTime = 0;
+            const stagesArray = Object.values(stages);
+
+            stagesArray.forEach((stage, index) => {
+                let currentPt = originalProcessTimes[stage.id] || 0;
+                let currentWt = originalWaitTimes[stage.id] || 0;
+
+                // Apply waste effect for METRICS (+50% PT)
+                if (hasWaste && stage.id === 'stage-build-test') {
+                    currentPt += Math.ceil(originalProcessTimes[stage.id] * 0.5);
+                }
+                totalProcessTime += currentPt;
+                totalLeadTime += currentPt; // Add Process Time of current stage
+
+                // Apply bottleneck effect for METRICS (Double WT)
+                if (hasBottleneck && stage.id === 'stage-build-test') {
+                    currentWt += originalWaitTimes[stage.id];
+                }
+
+                // *** Reverted: Add Wait Time for ALL stages ***
+                totalLeadTime += currentWt;
+
+            });
+
+            const flowEfficiency = totalLeadTime > 0 ? ((totalProcessTime / totalLeadTime) * 100).toFixed(1) : 0;
+
+            leadTimeEl.textContent = totalLeadTime;
+            processTimeEl.textContent = totalProcessTime;
+            flowEfficiencyEl.textContent = flowEfficiency;
+
+            let message = "";
+             if (hasBottleneck && hasWaste) {
+                 message = "Bottleneck & Waste significantly increase Lead Time and decrease Efficiency!";
+             } else if (hasBottleneck) {
+                 message = "Bottleneck in 'Test' increases Wait Time, impacting Lead Time & Efficiency!";
+             } else if (hasWaste) {
+                 message = "Waste (Manual Tests) increases Process Time, impacting Lead Time & Efficiency!";
+             } else {
+                 message = "All major inefficiencies removed! Observe the improved metrics.";
+             }
+             metricsMessageEl.textContent = message;
+             metricsMessageEl.classList.toggle('hidden', !message);
+
+            return { totalLeadTime, totalProcessTime };
+        }
+
+        // --- Simulation Logic (Animation) ---
+        async function simulateDelayWithCounter(days) {
+            const delayPerDay = SIMULATION_SPEED_MULTIPLIER;
+            const numDays = Math.max(0, Math.floor(days));
+            for (let d = 0; d < numDays; d++) {
+                if (!isRunning) return; // Allow interruption
+                await new Promise(resolve => setTimeout(resolve, delayPerDay));
+                simulationDayCounter++;
+                if (dayCounterEl) {
+                    dayCounterEl.textContent = simulationDayCounter;
+                }
+            }
+        }
+
+        async function runSimulation() {
+            if (isRunning) return;
+            isRunning = true;
+            [runButton, bottleneckButton, wasteButton].forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+
+            simulationDayCounter = 0;
+            if (dayCounterEl) dayCounterEl.textContent = simulationDayCounter;
+
+            workItem.classList.remove('hidden');
+            workItem.style.transition = 'none';
+            workItem.style.left = '0%';
+            workItem.offsetHeight;
+            workItem.style.transition = 'left 1s ease-in-out';
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+
+            const stageElements = [stages.plan, stages.code, stages.buildTest, stages.deploy];
+
+            for (let i = 0; i < stageElements.length; i++) {
+                 if (!isRunning) break;
+                const stage = stageElements[i];
+                const stageWidthPercent = 100 / stageElements.length;
+                const targetPosition = (i + 0.5) * stageWidthPercent;
+
+                workItem.style.left = `${targetPosition}%`; // Start moving
+
+                // Calculate effective times using METRIC penalties
+                let effectiveProcessTime = originalProcessTimes[stage.id] || 0;
+                let effectiveWaitTime = originalWaitTimes[stage.id] || 0;
+
+                if (hasWaste && stage.id === 'stage-build-test') {
+                    effectiveProcessTime += Math.ceil(originalProcessTimes[stage.id] * 0.5);
+                }
+                 if (hasBottleneck && stage.id === 'stage-build-test') {
+                    effectiveWaitTime += originalWaitTimes[stage.id];
+                 }
+
+                // Wait for CSS move transition
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                 if (!isRunning) break;
+
+                // Simulate process delay
+                await simulateDelayWithCounter(effectiveProcessTime);
+                 if (!isRunning) break;
+
+                // *** Always simulate wait delay (even for last stage) ***
+                // This ensures the counter includes the final wait time before confetti
+                await simulateDelayWithCounter(effectiveWaitTime);
+                 if (!isRunning) break;
+
+            } // End of loop
+
+            // *** Confetti fires AFTER all delays (including final wait time) are simulated ***
+            if (isRunning && typeof confetti === 'function') {
+                 try {
+                     const workItemRect = workItem.getBoundingClientRect();
+                     const originX = (workItemRect.left + workItemRect.width / 2) / window.innerWidth;
+                     const originY = (workItemRect.top + workItemRect.height / 2) / window.innerHeight;
+                    confetti({
+                        particleCount: 150,
+                        spread: 80,
+                        origin: { x: originX, y: originY },
+                        zIndex: 2000
+                    });
+                 } catch (e) {
+                     console.error("Confetti failed:", e);
+                 }
+                 await new Promise(resolve => setTimeout(resolve, 500)); // Pause after confetti
+            }
+
+            // Finish simulation only if it wasn't interrupted
+            if (isRunning) {
+                workItem.classList.add('hidden');
+                workItem.style.left = '0%';
+                if (dayCounterEl) dayCounterEl.textContent = '0';
+            }
+
+            isRunning = false; // Reset flag regardless
+            [runButton, bottleneckButton, wasteButton].forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+        }
+
+        // --- Button Logic (Toggle Bottleneck) ---
+        function toggleBottleneck() {
+            hasBottleneck = !hasBottleneck;
+            stages.buildTest.classList.toggle('bottleneck', hasBottleneck);
+
+            if (hasBottleneck) {
+                 bottleneckButton.innerHTML = bottleneckIconSVG + 'Remove Bottleneck (Test)';
+                 bottleneckButton.classList.remove('bg-red-500', 'hover:bg-red-600');
+                 bottleneckButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+            } else {
+                 bottleneckButton.innerHTML = bottleneckIconSVG + 'Add Bottleneck (Test)';
+                 bottleneckButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                 bottleneckButton.classList.add('bg-red-500', 'hover:bg-red-600');
+            }
+
+             const waitSpan = stages.buildTest.querySelector('.wait-time');
+             const originalWait = originalWaitTimes[stages.buildTest.id] || 0;
+             waitSpan.textContent = `Wait: ${hasBottleneck ? originalWait * 2 : originalWait}d`;
+             waitSpan.classList.toggle('font-bold', hasBottleneck);
+             waitSpan.classList.toggle('text-red-700', hasBottleneck);
+
+            calculateMetrics();
+        }
+
+         // --- Button Logic (Toggle Waste) ---
+         function toggleWaste() {
+             hasWaste = !hasWaste;
+             wasteIconManualTest.classList.toggle('hidden', !hasWaste);
+
+             if (hasWaste) {
+                 wasteButton.innerHTML = wasteIconSVG + 'Remove Waste (Test)';
+                 wasteButton.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+                 wasteButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+             } else {
+                  wasteButton.innerHTML = wasteIconSVG + 'Add Waste (Test)';
+                  wasteButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                  wasteButton.classList.add('bg-orange-500', 'hover:bg-orange-600');
+             }
+
+             const processSpan = stages.buildTest.querySelector('.process-time');
+             const originalProcess = originalProcessTimes[stages.buildTest.id] || 0;
+             const wasteTimeMetric = Math.ceil(originalProcess * 0.5);
+             processSpan.textContent = `PT: ${hasWaste ? originalProcess + wasteTimeMetric : originalProcess}d`;
+             processSpan.classList.toggle('font-bold', hasWaste);
+             processSpan.classList.toggle('text-orange-700', hasWaste);
+
+             calculateMetrics();
+         }
+
+        // --- Event Listeners ---
+        runButton.addEventListener('click', runSimulation);
+        bottleneckButton.addEventListener('click', toggleBottleneck);
+        wasteButton.addEventListener('click', toggleWaste);
+
+        // --- Initial Calculation & Display Update ---
+        storeOriginalTimes();
+        updateInitialDisplayTimes();
+        calculateMetrics();
+
+    </script>
+
+</body>
+</html>
